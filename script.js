@@ -22,6 +22,7 @@ const statusElem = document.getElementById('status');
 const recordStatus = document.getElementById('recordStatus');
 const canvas = document.getElementById('visualizer');
 const canvasCtx = canvas.getContext('2d');
+
 const plotCanvas = document.getElementById('plotCanvas');
 const plotCtx = plotCanvas.getContext('2d');
 // const dominantFreqSpan = document.getElementById('dominantFreq');
@@ -29,6 +30,22 @@ const ambulanceSpeedSpan = document.getElementById('ambulanceSpeed');
 const roadDistanceSpan = document.getElementById('roadDistance');
 const passTimeSpan = document.getElementById('passTime');
 const fundamentalFreqSpan = document.getElementById('fundamentalFreq');
+
+// #canvasContainer に追加し、サイズを同期
+(function initCanvases() {
+    const container = document.getElementById('canvasContainer');
+    if (container) {
+        // 既存の同ID要素があれば入れ替え
+        const prevPlot = document.getElementById('plotCanvas');
+        const prevVis = document.getElementById('visualizer');
+        if (prevPlot && prevPlot !== plotCanvas) prevPlot.remove();
+        if (prevVis && prevVis !== canvas) prevVis.remove();
+        container.appendChild(plotCanvas);
+        container.appendChild(canvas);
+    }
+    syncCanvasSize(plotCanvas, plotCtx);
+    syncCanvasSize(canvas, canvasCtx);
+})();
 
 const minFreq = 700;
 const maxFreq = 1000;
@@ -44,6 +61,19 @@ let estimation = {
 };
 let firstHightRecordTime = 0;
 let firstLowRecordTime = 0;
+
+// function syncCanvasSize(canvas, ctx) {
+//     const dpr = window.devicePixelRatio || 1;
+//     const cssW = Math.floor(canvas.clientWidth);
+//     const cssH = Math.floor(canvas.clientHeight);
+//     canvas.width = Math.max(1, cssW * dpr);
+//     canvas.height = Math.max(1, cssH * dpr);
+//     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // スケールをCSSピクセル基準に
+//   }
+  
+  // 使い方
+  syncCanvasSize(canvas, canvasCtx);
+  syncCanvasSize(plotCanvas, plotCtx);
 
 // マイクの開始
 async function startMicrophone() {
@@ -331,31 +361,31 @@ function dopplerFitting(v_amb_input, road_dist_input, t0_input) {
 }
 
 // 周波数を計算する関数
-function calculateFrequency(frequencyData, sampleRate) {
-    // 周波数データから最大振幅のインデックスを見つける
-    let maxValue = 0;
-    let maxIndex = 0;
+// function calculateFrequency(frequencyData, sampleRate) {
+//     // 周波数データから最大振幅のインデックスを見つける
+//     let maxValue = 0;
+//     let maxIndex = 0;
     
-    // 人間の可聴範囲（20Hz～20kHz）に絞る
-    const minFreqIndex = 0;
-    const maxFreqIndex = Math.min(frequencyData.length, Math.floor(maxmaxFreq * analyser.fftSize / sampleRate));
+//     // 人間の可聴範囲（20Hz～20kHz）に絞る
+//     const minFreqIndex = 0;
+//     const maxFreqIndex = Math.min(frequencyData.length, Math.floor(maxmaxFreq * analyser.fftSize / sampleRate));
     
-    for (let i = minFreqIndex; i < maxFreqIndex; i++) {
-        if (frequencyData[i] > maxValue) {
-            maxValue = frequencyData[i];
-            maxIndex = i;
-        }
-    }
+//     for (let i = minFreqIndex; i < maxFreqIndex; i++) {
+//         if (frequencyData[i] > maxValue) {
+//             maxValue = frequencyData[i];
+//             maxIndex = i;
+//         }
+//     }
     
-    // インデックスを実際の周波数に変換
-    const frequency = (maxIndex * sampleRate) / analyser.fftSize;
+//     // インデックスを実際の周波数に変換
+//     const frequency = (maxIndex * sampleRate) / analyser.fftSize;
     
-    return {
-        frequency: frequency,
-        amplitude: maxValue,
-        index: maxIndex
-    };
-}
+//     return {
+//         frequency: frequency,
+//         amplitude: maxValue,
+//         index: maxIndex
+//     };
+// }
 
 // 主要周波数を計算（複数のピークから基本周波数を推定）
 // 注意: これは簡易的な方法で、最大振幅の周波数を返します
@@ -495,7 +525,7 @@ function visualize() {
     
     // 周波数を計算
     // 全周波数範囲（o~20kHz）で最も強い周波数を取得
-    const peakFreqInfo = calculateFrequency(frequencyData, sampleRate);
+    // const peakFreqInfo = calculateFrequency(frequencyData, sampleRate);
     // 80Hz~2000Hzの範囲で最も強い周波数を取得（最大振幅の周波数）
     const dominantFreq = findDominantFrequency(frequencyData, sampleRate);
     // より正確な基本周波数を推定（時間領域データを使用）
@@ -690,13 +720,6 @@ function plotFrequencyHistory() {
     const times = frequencyHistory.map(d => d.time);
     const minTime = performance.now() / 1000 - recordingStartTime - 15.0;
     const maxTime = performance.now() / 1000 - recordingStartTime;
-    const minFrequency = minFreq;
-    const maxFrequency = maxFreq;
-    
-    // Y軸の範囲を調整（少し余白を追加）
-    const freqRange = maxFrequency - minFrequency;
-    const adjustedMinFreq = Math.max(0, minFrequency - (freqRange > 0 ? freqRange * 0.1 : 100));
-    const adjustedMaxFreq = maxFrequency + (freqRange > 0 ? freqRange * 0.1 : 100);
     
     // 時間範囲が0の場合の処理
     const timeRange = maxTime - minTime;
@@ -715,7 +738,7 @@ function plotFrequencyHistory() {
         plotCtx.lineTo(padding + plotWidth, y);
         plotCtx.stroke();
         
-        const freq = adjustedMaxFreq - (adjustedMaxFreq - adjustedMinFreq) * (i / numGridLines);
+        const freq = maxFreq - (maxFreq - minFreq) * (i / numGridLines);
         plotCtx.fillStyle = 'rgb(100, 100, 100)';
         plotCtx.font = '12px Arial';
         plotCtx.fillText(freq.toFixed(0) + ' Hz', 5, y + 4);
@@ -730,7 +753,7 @@ function plotFrequencyHistory() {
         plotCtx.lineTo(x, padding + plotHeight);
         plotCtx.stroke();
         
-        const time = minTime + timeRange * (i / numTimeLines);
+        const time = -timeRange * ((numTimeLines - i) / numTimeLines);
         plotCtx.fillStyle = 'rgb(100, 100, 100)';
         plotCtx.font = '12px Arial';
         plotCtx.fillText(time.toFixed(1) + 's', x - 15, plotCanvas.height - 5);
@@ -739,28 +762,7 @@ function plotFrequencyHistory() {
     // データをプロット
     plotCtx.lineWidth = 2;
     
-    const freqRangeForPlot = adjustedMaxFreq - adjustedMinFreq;
-    
-    function plotFrequency(frequency, color) {
-        plotCtx.strokeStyle = color;
-        plotCtx.beginPath();
-        for (let i = 0; i < frequencyHistory.length; i++) {
-            const time = frequencyHistory[i].time;
-            const x = padding + ((time - minTime) / timeRange) * plotWidth;
-            const y = padding + plotHeight - ((frequency[i] - adjustedMinFreq) / freqRangeForPlot) * plotHeight;
-            
-            if (i === 0) {
-                plotCtx.moveTo(x, y);
-            } else {
-                plotCtx.lineTo(x, y);
-            }
-        }
-        plotCtx.stroke();
-    }
-
-    // plotFrequency(frequencyHistory.map(d => d.frequency), 'rgb(0, 123, 255)');
-    // plotFrequency(frequencyHistory.map(d => d.dominantFrequency), 'rgb(255, 0, 0)');
-    // plotFrequency(frequencyHistory.map(d => d.ambulanceFrequency), 'rgb(0, 255, 0)');
+    const freqRangeForPlot = maxFreq - minFreq;
     
     // データポイントを描画
     function plotDataPoint(frequency, color) {
@@ -768,7 +770,7 @@ function plotFrequencyHistory() {
         for (let i = 0; i < frequencyHistory.length; i++) {
             const time = frequencyHistory[i].time;
             const x = padding + ((time - minTime) / timeRange) * plotWidth;
-            const y = padding + plotHeight - ((frequency[i] - adjustedMinFreq) / freqRangeForPlot) * plotHeight;
+            const y = padding + plotHeight - ((frequency[i] - minFreq) / freqRangeForPlot) * plotHeight;
             
             plotCtx.beginPath();
             plotCtx.arc(x, y, 2, 0, Math.PI * 2);
@@ -780,7 +782,7 @@ function plotFrequencyHistory() {
         for (let i = 0; i < ambulanceHistory.length; i++) {
             const time = ambulanceHistory[i].time;
             const x = padding + ((time - minTime) / timeRange) * plotWidth;
-            const y = padding + plotHeight - ((ambulanceHistory[i].frequency - adjustedMinFreq) / freqRangeForPlot) * plotHeight;
+            const y = padding + plotHeight - ((ambulanceHistory[i].frequency - minFreq) / freqRangeForPlot) * plotHeight;
             plotCtx.beginPath();
             plotCtx.arc(x, y, 2, 0, Math.PI * 2);
             plotCtx.fill();
@@ -793,7 +795,7 @@ function plotFrequencyHistory() {
         for (let t = t_min; t < t_max; t += 0.1) {
             const fitting = dopplerEffect(freq_source, t, estimation.v_amb, estimation.road_dist, estimation.t0);
             const x = padding + ((t - minTime) / timeRange) * plotWidth;
-            const y = padding + plotHeight - ((fitting - adjustedMinFreq) / freqRangeForPlot) * plotHeight;
+            const y = padding + plotHeight - ((fitting - minFreq) / freqRangeForPlot) * plotHeight;
             if (t == t_min) {
                 plotCtx.moveTo(x, y);
             } else {
@@ -803,10 +805,7 @@ function plotFrequencyHistory() {
         plotCtx.stroke();
     }
 
-    // plotDataPoint(frequencyHistory.map(d => d.frequency), 'rgb(0, 123, 255)');
-    // plotDataPoint(frequencyHistory.map(d => d.dominantFrequency), 'rgb(255, 0, 0)');
-    // plotDataPoint(ambulanceHighHistory.map(d => d.ambulanceFrequency), 'rgb(255, 0, 0)');
-    // plotDataPoint(ambulanceLowHistory.map(d => d.ambulanceFrequency), 'rgb(0, 0, 100)');
+    console.log(plotCanvas.width, plotCanvas.height);
     plotAmbulanceFrequency(ambulanceHighHistory, ambulanceHighFreq, 'rgb(0, 255, 0)');
     plotAmbulanceFrequency(ambulanceLowHistory, ambulanceLowFreq, 'rgb(0, 0, 255)');
 
@@ -832,4 +831,19 @@ clearRecordBtn.addEventListener('click', clearRecording);
 
 // ページを離れる前に停止
 window.addEventListener('beforeunload', stopMicrophone);
+
+
+
+window.addEventListener('resize', () => {
+    syncCanvasSize(plotCanvas, plotCtx);
+    syncCanvasSize(canvas, canvasCtx);
+});
+
+function syncCanvasSize(el, ctx) {
+    const displayWidth = el.clientWidth;
+    const displayHeight = el.clientHeight;
+    el.width = displayWidth;
+    el.height = displayHeight;
+    // ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+}
 
