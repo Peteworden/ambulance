@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>救急車や！</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 100%;
+            margin: 0px auto;
+            padding: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        h1 {
+            margin: 5px 0;
+        }
+        h3 {
+            margin: 5px 0;
+        }
+        h5 {
+            margin: 5px 0;
+        }
+        #status {
+            margin: 20px 0;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+        #visualizer {
+            margin: 20px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚨救急車や！🚑</h1>
+    <h3><span style="color: red;">救急車の速さ、気になりませんか。</span></h3>
+    <h5>ただし救急車は等速直線運動をし、観測者の移動や風はなく、音速は340m/sとする。<span style="font-size: xx-large;">精度は求めないでください</span></h5>
+    <button id="startBtn" style="background-color: orange; color: white; border-radius: 10px;">早めに押す<i class="fa-solid fa-play"></i></button>
+    <button id="stopBtn" disabled style="border-radius: 10px;">終わったら押してもいい<i class="fa-solid fa-stop"></i></button>
+    <div id="status">準備完了</div>
+    <div id="frequencyInfo" style="margin: 20px 0; padding: 15px; background: #e8f4f8; border-radius: 5px; font-size: 18px;">
+        <!-- <div><strong>最大振幅の周波数:</strong> <span id="dominantFreq">-</span> Hz</div> -->
+        <div style="margin-top: 10px; font-size: 14px; color: #0066cc;">
+            <strong>周波数:</strong> <span id="fundamentalFreq">-</span> Hz <br>
+            <strong>救急車の速さ:</strong> <span id="ambulanceSpeed">-</span><br>
+            <strong>道路までの距離:</strong> <span id="roadDistance">-</span><br>
+            <strong>通過時刻:</strong> <span id="passTime">-</span>
+        </div>
+        <!-- <div style="margin-top: 10px; font-size: 14px;">
+            周波数範囲: <span id="freqRange">-</span><br>
+            全範囲での最大振幅: <span id="peakFreq">-</span> Hz
+        </div> -->
+    </div>
+    <div style="margin: 20px 0;">
+        <button id="recordBtn" disabled style="background-color: orange; color: white; border-radius: 10px;">通過5秒前ぐらいに押す<i class="fa-solid fa-play"></i></button>
+        <button id="stopRecordBtn" disabled>通過したら押す<i class="fa-solid fa-stop"></i></button>
+        <button id="clearRecordBtn" disabled>記録クリア<i class="fa-solid fa-trash"></i></button>
+        <span id="recordStatus" style="margin-left: 20px;">記録していません</span>
+    </div>
+    <canvas id="plotCanvas" width="800" height="300" style="border: 1px solid #ccc; border-radius: 5px; margin: 20px 0;"></canvas>
+    <canvas id="visualizer" width="800" height="400"></canvas>
+    <script src="script.js"></script>
+</body>
+</html>
